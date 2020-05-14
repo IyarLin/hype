@@ -1,0 +1,13 @@
+Package: hype
+Type: Package
+Title: Variuos functions for proportions difference hypothesis testing
+Version: 0.1.0
+Author: Iyar Lin <iyarlin@gmail.com>
+Maintainer: Iyar Lin <iyarlin@gmail.com>
+Description: The hype package contains various functions for critical value, 
+  power, minimum detectable effect and minimum required sample calculations 
+  in the context of proportions difference hypothesis testing.
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
