@@ -2,16 +2,17 @@
 #' @description this function calculates the test statistic critical
 #' value C which guarantees significance level (false discovery rate) \alpha
 #'
-#' @param p_1_hat population 1 estimated p parameter
+#' @param p_1_hat estimated population 1 p parameter
 #' @param n_1 population 1 sample size
-#' @param p_0_hat population 0 estimated p parameter
+#' @param p_0_hat estimated population 0 p parameter
 #' @param n_1 population 0 sample size
 #' @param alpha test significance level
 #' @param s either 1 (for one sided test) or 2 (for two sided test)
+#' @param h number of hypothesis tested in the same experiment (for Bonferroni correction)
 #' @param gamma minimum required lift
 #'
 #' @return critical value C
-#' @example inst/example.R
+#' @example inst/C_example.R
 #'
 #' @details when doing one-sided tests it's usually the case
 #' that population 1 is considered the treatment and population

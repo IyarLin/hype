@@ -12,7 +12,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T)
 library(pander)
-library(magrittr)
+library(tidyverse)
 options(scipen = 999)
 set.seed(1)
 ```
@@ -21,7 +21,7 @@ set.seed(1)
 
 # Intro
 
-This document contains proofs and formulas for several use cases encountered by the author in the context of experimental design. Some background in Statistics is preferable for understanding some of the results (You're welcome to contact the author in case you'd like to get more clarifications). 
+This document contains proofs and formulas for several use cases encountered by the author in the context of experimental design. Some background in Statistics is preferable for understanding some of the results (You're welcome to contact the [author](mailto:iyarlin@gmail.com) in case you'd like to get more clarifications). 
 
 The first few sections contain proofs. Section [Formulas for combining min required lift, number of sides and number of hypothesis tests](#formulas) contains unified formulae along with simulation validation.
 
@@ -54,7 +54,7 @@ When rejecting the null we'd like to ensure that the probability we wrongly do s
 
 ## One sided test
 
-To that end we'll construct a test such that we reject the null if the difference $\hat{p_1} - \hat{p_0}$ exceeds some threshold $C$ with probability $\alpha$ when the null is in fact true:
+To that end we'll construct a test such that we reject the null if the difference $\hat{p_1} - \hat{p_0}$ exceeds some critical value $C$ with probability $\alpha$ when the null is in fact true:
 
 $$P_{H_0}(\hat{p}_1-\hat{p}_0>C)=\alpha$$
 The above probability is also called type 1 error.
@@ -198,7 +198,7 @@ $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \alpha) - \Phi^{-1}(\beta)\right)\s
 
 Below we can see the formulas presented above combining min required lift $\gamma$, number of sides $s \in \{1,2\}$ and number of hypothesis tests $h \in \mathbb{N}$ (Using Bonferroni correction for multiple hypothesis testing).
 
-## Test statistic
+## Critical value
 
 The below is true for all cases **except** $s = 2 \cap \gamma \neq0$.
 
@@ -217,7 +217,8 @@ C <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, s, h, gamma) {
 
 p_0 <- 0.2
 p_1 <- 0.2 # Null is true
-n_0 <- n_1 <- 10000
+n_0 <- 8000
+n_1 <- 12000
 alpha <- 0.05
 
 s <- 1:2
@@ -278,7 +279,9 @@ rejected_null[,,1] %>% as.data.frame() %>% pandoc.table(split.tables = Inf, capt
 ```
 
 ```{r, results = "asis", echo = F}
-rejected_null[,4,2] %>% as.data.frame() %>% pandoc.table(split.tables = Inf, caption = "sides = 2")
+rejected_null[,4,2] %>% as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>% 
+  pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
 ## Power
@@ -295,7 +298,8 @@ power <- function(p_1, n_1, p_0, n_0, alpha, s, h, gamma) {
 }
 
 p_0 <- 0.2
-n_0 <- n_1 <- 10000
+n_0 <- 8000
+n_1 <- 12000
 alpha <- 0.05
 coef <- 1.05
 s <- 1:2
@@ -379,7 +383,8 @@ rejected_null_calc_power[,,1] %>% as.data.frame() %>%
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_power[,4,2] %>% as.data.frame() %>% 
+rejected_null_calc_power[,4,2] %>% as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>% 
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -397,7 +402,8 @@ MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
 }
 
 p_0 <- 0.2
-n_0 <- n_1 <- 10000
+n_0 <- 8000
+n_1 <- 12000
 alpha <- 0.05
 s <- 1:2
 h <- 1:5
@@ -476,7 +482,8 @@ rejected_null_calc_MDE[,,1] %>% as.data.frame() %>%
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_MDE[,4,2] %>% as.data.frame() %>% 
+rejected_null_calc_MDE[,4,2] %>% as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>% 
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -573,11 +580,14 @@ rejected_null_calc_min_n[,,1] %>% as.data.frame() %>%
 ```
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_min_n[,4,2] %>% as.data.frame() %>% 
+rejected_null_calc_min_n[,4,2] %>% as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>% 
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
-# Testing with several samples
+# Testing with several samples 
+
+Do note this section isn't implemented yet in the *hype* package.
 
 ## Notations
 
