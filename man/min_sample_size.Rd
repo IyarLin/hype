@@ -21,7 +21,9 @@ min_sample_size(p_1, p_0, alpha, s, h, gamma, power)
 
 \item{power}{desired test power (inverse of type 2 error)}
 
-\item{n_1}{population 0 sample size}
+\item{n_1}{population 1 sample size}
+
+\item{n_0}{population 0 sample size}
 }
 \value{
 minimum requires sample size per treatment group
@@ -34,7 +36,7 @@ h and gamma.
 }
 \details{
 when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and population
+that population 1 is considered the treatment and
 population 0 serves as the control. In 2 sided tests each
 usually represents a different treatment. 2 sided tests with
 non zero gamma aren't supported yet.

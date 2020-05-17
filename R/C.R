@@ -5,7 +5,7 @@
 #' @param p_1_hat estimated population 1 p parameter
 #' @param n_1 population 1 sample size
 #' @param p_0_hat estimated population 0 p parameter
-#' @param n_1 population 0 sample size
+#' @param n_0 population 0 sample size
 #' @param alpha test significance level
 #' @param s either 1 (for one sided test) or 2 (for two sided test)
 #' @param h number of hypothesis tested in the same experiment (for Bonferroni correction)
@@ -15,7 +15,7 @@
 #' @example inst/C_example.R
 #'
 #' @details when doing one-sided tests it's usually the case
-#' that population 1 is considered the treatment and population
+#' that population 1 is considered the treatment and
 #' population 0 serves as the control. In 2 sided tests each
 #' usually represents a different treatment. 2 sided tests with
 #' non zero gamma aren't supported yet.

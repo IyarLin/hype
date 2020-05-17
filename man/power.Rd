@@ -9,9 +9,11 @@ power(p_1, n_1, p_0, n_0, alpha, s, h, gamma)
 \arguments{
 \item{p_1}{assumed population 1 p parameter}
 
-\item{n_1}{population 0 sample size}
+\item{n_1}{population 1 sample size}
 
 \item{p_0}{assumed population 0 p parameter}
+
+\item{n_0}{population 0 sample size}
 
 \item{alpha}{test significance level}
 
@@ -30,7 +32,7 @@ this function calculates the test power
 }
 \details{
 when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and population
+that population 1 is considered the treatment and
 population 0 serves as the control. In 2 sided tests each
 usually represents a different treatment. 2 sided tests with
 non zero gamma aren't supported yet.
