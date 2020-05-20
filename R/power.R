@@ -11,17 +11,24 @@
 #' @param h number of hypothesis tested in the same experiment (for Bonferroni correction)
 #' @param gamma minimum required lift
 #'
+#' @importFrom stats pnorm
+#' @export
+#'
 #' @return test power
 #' @example inst/power_example.R
 #'
 #' @details when doing one-sided tests it's usually the case
 #' that population 1 is considered the treatment and
 #' population 0 serves as the control. In 2 sided tests each
-#' usually represents a different treatment. 2 sided tests with
-#' non zero gamma aren't supported yet.
+#' usually represents a different treatment.
 
 power <- function(p_1, n_1, p_0, n_0, alpha, s, h, gamma) {
-  if (gamma != 0 & s == 2) stop("using gamma != 0 with s = 2 is not supported yet")
-  1 - pnorm((qnorm(1 - alpha / (s * h)) * sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0) -
-               (p_1 - (p_0 + gamma))) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (s == 2 & gamma < 0) {
+    p_0_aside <- p_0
+    p_0 <- p_1
+    p_1 <- p_0_aside
+  }
+  1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
+    (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
 }

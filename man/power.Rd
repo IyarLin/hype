@@ -34,8 +34,7 @@ this function calculates the test power
 when doing one-sided tests it's usually the case
 that population 1 is considered the treatment and
 population 0 serves as the control. In 2 sided tests each
-usually represents a different treatment. 2 sided tests with
-non zero gamma aren't supported yet.
+usually represents a different treatment.
 }
 \examples{
 library(hype)
@@ -48,10 +47,14 @@ library(hype)
 # note that h is set to 2 in order to reflect that
 
 ## hypothesis test number 1
-power(p_1 = 0.225, n_1 = 10000, p_0 = 0.2, n_0 = 8000,
-  alpha = 0.05, s = 1, h = 2, gamma = 0.01)
+power(
+  p_1 = 0.225, n_1 = 10000, p_0 = 0.2, n_0 = 8000,
+  alpha = 0.05, s = 1, h = 2, gamma = 0.01
+)
 
 ## hypothesis test number 2
-power(p_1 = 0.118, n_1 = 5000, p_0 = 0.1, n_0 = 3000,
-  alpha = 0.05, s = 2, h = 2, gamma = 0)
+power(
+  p_1 = 0.118, n_1 = 5000, p_0 = 0.1, n_0 = 3000,
+  alpha = 0.05, s = 2, h = 2, gamma = 0
+)
 }

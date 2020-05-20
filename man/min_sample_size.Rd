@@ -20,10 +20,6 @@ min_sample_size(p_1, p_0, alpha, s, h, gamma, power)
 \item{gamma}{minimum required lift}
 
 \item{power}{desired test power (inverse of type 2 error)}
-
-\item{n_1}{population 1 sample size}
-
-\item{n_0}{population 0 sample size}
 }
 \value{
 minimum requires sample size per treatment group
@@ -38,8 +34,7 @@ h and gamma.
 when doing one-sided tests it's usually the case
 that population 1 is considered the treatment and
 population 0 serves as the control. In 2 sided tests each
-usually represents a different treatment. 2 sided tests with
-non zero gamma aren't supported yet.
+usually represents a different treatment.
 }
 \examples{
 library(hype)
@@ -53,12 +48,16 @@ library(hype)
 # note that h is set to 2 in order to reflect that
 
 ## hypothesis test number 1
-min_sample_size(p_1 = 0.225, p_0 = 0.2,
-      alpha = 0.05, s = 1, h = 2, gamma = 0.01,
-      power = 0.8)
+min_sample_size(
+  p_1 = 0.225, p_0 = 0.2,
+  alpha = 0.05, s = 1, h = 2, gamma = 0.01,
+  power = 0.8
+)
 
 ## hypothesis test number 2
-min_sample_size(p_1 = 0.118, p_0 = 0.1,
-      alpha = 0.05, s = 2, h = 2, gamma = 0,
-      power = 0.8)
+min_sample_size(
+  p_1 = 0.118, p_0 = 0.1,
+  alpha = 0.05, s = 2, h = 2, gamma = 0,
+  power = 0.8
+)
 }

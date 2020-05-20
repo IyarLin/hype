@@ -13,17 +13,20 @@
 #' @param gamma minimum required lift
 #' @param power desired test power (inverse of type 2 error)
 #'
+#' @importFrom stats pnorm qnorm
+#' @export
+#'
 #' @return test MDE
 #' @example inst/mde_example.R
 #'
 #' @details when doing one-sided tests it's usually the case
 #' that population 1 is considered the treatment and
 #' population 0 serves as the control. In 2 sided tests each
-#' usually represents a different treatment. 2 sided tests with
-#' non zero gamma aren't supported yet.
+#' usually represents a different treatment.
 
-MDE <- function(n_1, p_0, n_0, alpha, s, h, gamma, power) {
-  if (gamma != 0 & s == 2) stop("using gamma != 0 with s = 2 is not supported yet")
+MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (s == 2) gamma <- abs(gamma)
   (qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
 }

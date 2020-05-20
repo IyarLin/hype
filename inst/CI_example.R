@@ -8,9 +8,13 @@ library(hype)
 # note that h is set to 2 in order to reflect that
 
 ## hypothesis test number 1
-C(p_1_hat = 0.212, n_1 = 10000, p_0_hat = 0.219, n_0 = 8000,
-  alpha = 0.05, s = 1, h = 2, gamma = 0.01)
+CI(
+  p_1_hat = 0.212, n_1 = 10000, p_0_hat = 0.219, n_0 = 8000,
+  alpha = 0.05, h = 2
+)
 
 ## hypothesis test number 2
-C(p_1_hat = 0.11, n_1 = 5000, p_0_hat = 0.132, n_0 = 3000,
-  alpha = 0.05, s = 2, h = 2, gamma = 0)
+CI(
+  p_1_hat = 0.11, n_1 = 5000, p_0_hat = 0.132, n_0 = 3000,
+  alpha = 0.05, h = 2
+)
