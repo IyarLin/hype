@@ -33,10 +33,13 @@ size p_1 - p_0 which yields the desired power and provided
 sample sizes, alpha, s, h and gamma.
 }
 \details{
-when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and
-population 0 serves as the control. In 2 sided tests each
+In 2 sided tests each
 usually represents a different treatment.
+When doing one-sided tests it's usually the case
+that population 1 is considered the treatment and
+population 0 serves as the control. At any rate,
+one sided tests are always of the form p_1 - p_0 > C.
+For that reason for 1 sided tests one must set: gamma >= 0
 }
 \examples{
 library(hype)

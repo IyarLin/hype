@@ -35,6 +35,8 @@ power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
   if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
   if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
 
+  p_1 <- p_0 + mde
+
   1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
                (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
 }

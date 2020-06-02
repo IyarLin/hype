@@ -4,7 +4,7 @@
 \alias{CI}
 \title{Calculate proportion difference confidence interval}
 \usage{
-CI(p_1_hat, n_1, p_0_hat, n_0, alpha = 0.05, h)
+CI(p_1_hat, n_1, p_0_hat, n_0, alpha, h)
 }
 \arguments{
 \item{p_1_hat}{estimated population 1 p parameter}
@@ -20,19 +20,13 @@ CI(p_1_hat, n_1, p_0_hat, n_0, alpha = 0.05, h)
 \item{h}{number of hypothesis tested in the same experiment (for Bonferroni correction)}
 }
 \value{
-a list with 2 elements:
-  \item{lower}{confidence interval lower bound}
-  \item{upper}{confidence interval upper bound}
+a data.frame with 2 columns:
+  \item{lower_bound}{confidence interval lower bound}
+  \item{upper_bound}{confidence interval upper bound}
 }
 \description{
 this function calculates the proportion difference confidence interval.
 This interval has probability alpha of containing the real difference.
-}
-\details{
-when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and
-population 0 serves as the control. In 2 sided tests each
-usually represents a different treatment.
 }
 \examples{
 library(hype)

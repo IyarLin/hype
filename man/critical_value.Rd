@@ -31,10 +31,13 @@ this function calculates the test statistic critical
 value C which guarantees significance level (false discovery rate) alpha
 }
 \details{
-when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and
-population 0 serves as the control. In 2 sided tests each
+In 2 sided tests each
 usually represents a different treatment.
+When doing one-sided tests it's usually the case
+that population 1 is considered the treatment and
+population 0 serves as the control. At any rate,
+one sided tests are always of the form p_1 - p_0 > C.
+For that reason for 1 sided tests one must set: gamma >= 0
 }
 \examples{
 library(hype)
@@ -48,13 +51,17 @@ library(hype)
 
 ## hypothesis test number 1
 critical_value(
-  p_1_hat = 0.212, n_1 = 10000, p_0_hat = 0.219, n_0 = 8000,
+  p_1_hat = 0.225, n_1 = 10000, p_0_hat = 0.2, n_0 = 8000,
   alpha = 0.05, s = 1, h = 2, gamma = 0.01
 )
 
+# this is significant
+
 ## hypothesis test number 2
 critical_value(
-  p_1_hat = 0.11, n_1 = 5000, p_0_hat = 0.132, n_0 = 3000,
+  p_1_hat = 0.114, n_1 = 5000, p_0_hat = 0.1, n_0 = 3000,
   alpha = 0.05, s = 2, h = 2, gamma = 0
 )
+
+# this is insignificant
 }

@@ -303,6 +303,8 @@ $$\boxed{1- \beta = 1 - \Phi\left(\frac{\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) \
 ### Simulation validation
 
 ```{r}
+rm(list = ls())
+source("../R/critical_value.R")
 power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
   # validate inputs
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
@@ -312,6 +314,8 @@ power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
   # validate test logic
   if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
   if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
+  
+  p_1 <- p_0 + mde
 
   1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
     (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
@@ -332,9 +336,9 @@ rejected_null_calc_power <- array(
   dimnames = list(paste0("#tests = ", h), paste0("gamma = ", gamma), paste0("sides = ", s))
 )
 
-for (i in 1:dim(rejected_null)[1]) {
-  for (j in 1:dim(rejected_null)[2]) {
-    for (k in 1:dim(rejected_null)[3]) {
+for (i in 1:dim(rejected_null_calc_power)[1]) {
+  for (j in 1:dim(rejected_null_calc_power)[2]) {
+    for (k in 1:dim(rejected_null_calc_power)[3]) {
       if (s[k] == 2 & gamma[j] < 0) {
         next
       } else if (s[k] == 1 & gamma[j] < 0) {
@@ -424,6 +428,8 @@ $$\boxed{MDE = p_1-p_0 = \\ \left(\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) - \Phi^
 ### Simulation validation
 
 ```{r}
+rm(list = ls())
+source("../R/critical_value.R")
 MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
   # validate inputs
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
@@ -451,9 +457,9 @@ rejected_null_calc_MDE <- array(
   dimnames = list(paste0("#tests = ", h), paste0("gamma = ", gamma), paste0("sides = ", s))
 )
 
-for (i in 1:dim(rejected_null)[1]) {
-  for (j in 1:dim(rejected_null)[2]) {
-    for (k in 1:dim(rejected_null)[3]) {
+for (i in 1:dim(rejected_null_calc_MDE)[1]) {
+  for (j in 1:dim(rejected_null_calc_MDE)[2]) {
+    for (k in 1:dim(rejected_null_calc_MDE)[3]) {
       if (s[k] == 2 & gamma[j] < 0) next
       mde <- MDE(
         power = pow, n_1 = n_1, n_0 = n_0, p_0 = p_0, alpha = alpha,
@@ -531,6 +537,8 @@ $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \frac{\alpha}{s \cdot h}) - \Phi^{-
 ### Simulation validation
 
 ```{r}
+rm(list = ls())
+source("../R/critical_value.R")
 min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
   # validate inputs
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
@@ -561,9 +569,9 @@ rejected_null_calc_min_n <- array(
   dimnames = list(paste0("#tests = ", h), paste0("gamma = ", gamma), paste0("sides = ", s))
 )
 
-for (i in 1:dim(rejected_null)[1]) {
-  for (j in 1:dim(rejected_null)[2]) {
-    for (k in 1:dim(rejected_null)[3]) {
+for (i in 1:dim(rejected_null_calc_min_n)[1]) {
+  for (j in 1:dim(rejected_null_calc_min_n)[2]) {
+    for (k in 1:dim(rejected_null_calc_min_n)[3]) {
       if (s[k] == 2 & gamma[j] < 0) {
         next
       } else if (s[k] == 1 & gamma[j] < 0) {
@@ -652,6 +660,7 @@ $$\boxed{CI = \hat{p}_1-\hat{p}_0 \pm \Phi^{-1}(1-\frac{\alpha}{2h})\sqrt{\hat{p
 ## Simulation validation
 
 ```{r}
+rm(list = ls())
 CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
   # validate inputs
   if (h != round(h) | h < 1) stop("h must be a positive integer")

@@ -4,10 +4,10 @@
 \alias{power}
 \title{Calculate test power}
 \usage{
-power(p_1, n_1, p_0, n_0, alpha, s, h, gamma)
+power(mde, n_1, p_0, n_0, alpha, s, h, gamma)
 }
 \arguments{
-\item{p_1}{assumed population 1 p parameter}
+\item{mde}{minimum detectable effect}
 
 \item{n_1}{population 1 sample size}
 
@@ -31,10 +31,13 @@ this function calculates the test power
 (inverse of the type 2 probability).
 }
 \details{
-when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and
-population 0 serves as the control. In 2 sided tests each
+In 2 sided tests each
 usually represents a different treatment.
+When doing one-sided tests it's usually the case
+that population 1 is considered the treatment and
+population 0 serves as the control. At any rate,
+one sided tests are always of the form p_1 - p_0 > C.
+For that reason for 1 sided tests one must set: mde > gamma >= 0
 }
 \examples{
 library(hype)
@@ -48,13 +51,13 @@ library(hype)
 
 ## hypothesis test number 1
 power(
-  p_1 = 0.225, n_1 = 10000, p_0 = 0.2, n_0 = 8000,
+  mde = 0.025, n_1 = 10000, p_0 = 0.2, n_0 = 8000,
   alpha = 0.05, s = 1, h = 2, gamma = 0.01
 )
 
 ## hypothesis test number 2
 power(
-  p_1 = 0.118, n_1 = 5000, p_0 = 0.1, n_0 = 3000,
+  mde = 0.018, n_1 = 5000, p_0 = 0.1, n_0 = 3000,
   alpha = 0.05, s = 2, h = 2, gamma = 0
 )
 }

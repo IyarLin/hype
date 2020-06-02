@@ -17,10 +17,6 @@
 #'   \item{upper_bound}{confidence interval upper bound}
 #' @example inst/CI_example.R
 #'
-#' @details when doing one-sided tests it's usually the case
-#' that population 1 is considered the treatment and
-#' population 0 serves as the control. In 2 sided tests each
-#' usually represents a different treatment.
 
 CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
   # validate inputs

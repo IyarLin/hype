@@ -4,10 +4,10 @@
 \alias{min_sample_size}
 \title{Calculate minimum required sample size}
 \usage{
-min_sample_size(p_1, p_0, alpha, s, h, gamma, power)
+min_sample_size(mde, p_0, alpha, s, h, gamma, power)
 }
 \arguments{
-\item{p_1}{assumed population 1 p parameter (can also be thought of as the MDE)}
+\item{mde}{minimum detectable effect}
 
 \item{p_0}{assumed population 0 p parameter}
 
@@ -31,10 +31,13 @@ which acheives a desired MDE and power provided alpha, s,
 h and gamma.
 }
 \details{
-when doing one-sided tests it's usually the case
-that population 1 is considered the treatment and
-population 0 serves as the control. In 2 sided tests each
+In 2 sided tests each
 usually represents a different treatment.
+When doing one-sided tests it's usually the case
+that population 1 is considered the treatment and
+population 0 serves as the control. At any rate,
+one sided tests are always of the form p_1 - p_0 > C.
+For that reason for 1 sided tests one must set: mde > gamma >= 0
 }
 \examples{
 library(hype)
@@ -49,14 +52,14 @@ library(hype)
 
 ## hypothesis test number 1
 min_sample_size(
-  p_1 = 0.225, p_0 = 0.2,
+  mde = 0.025, p_0 = 0.2,
   alpha = 0.05, s = 1, h = 2, gamma = 0.01,
   power = 0.8
 )
 
 ## hypothesis test number 2
 min_sample_size(
-  p_1 = 0.118, p_0 = 0.1,
+  mde = 0.018, p_0 = 0.1,
   alpha = 0.05, s = 2, h = 2, gamma = 0,
   power = 0.8
 )
