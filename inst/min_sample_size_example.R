@@ -10,14 +10,14 @@ library(hype)
 
 ## hypothesis test number 1
 min_sample_size(
-  p_1 = 0.225, p_0 = 0.2,
+  mde = 0.025, p_0 = 0.2,
   alpha = 0.05, s = 1, h = 2, gamma = 0.01,
   power = 0.8
 )
 
 ## hypothesis test number 2
 min_sample_size(
-  p_1 = 0.118, p_0 = 0.1,
+  mde = 0.018, p_0 = 0.1,
   alpha = 0.05, s = 2, h = 2, gamma = 0,
   power = 0.8
 )

@@ -2,7 +2,7 @@
 #' @description this function calculates the test power
 #' (inverse of the type 2 probability).
 #'
-#' @param p_1 assumed population 1 p parameter
+#' @param mde minimum detectable effect
 #' @param n_1 population 1 sample size
 #' @param p_0 assumed population 0 p parameter
 #' @param n_0 population 0 sample size
@@ -22,12 +22,14 @@
 #' population 0 serves as the control. In 2 sided tests each
 #' usually represents a different treatment.
 
-power <- function(p_1, n_1, p_0, n_0, alpha, s, h, gamma) {
+power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
   if (s == 2 & gamma < 0) {
-    p_0_aside <- p_0
-    p_0 <- p_1
-    p_1 <- p_0_aside
+    p_1 <- p_0
+    p_0 <- p_1 + mde
+  } else {
+    p_1 <- p_0 + mde
   }
   1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
     (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))

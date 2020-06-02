@@ -4,7 +4,7 @@
 #' which acheives a desired MDE and power provided alpha, s,
 #' h and gamma.
 #'
-#' @param p_1 assumed population 1 p parameter (can also be thought of as the MDE)
+#' @param mde minimum detectable effect
 #' @param p_0 assumed population 0 p parameter
 #' @param alpha test significance level
 #' @param s either 1 (for one sided test) or 2 (for two sided test)
@@ -23,8 +23,9 @@
 #' population 0 serves as the control. In 2 sided tests each
 #' usually represents a different treatment.
 
-min_sample_size <- function(p_1, p_0, alpha, s, h, gamma, power) {
-  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
+  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
+  p_1 <- p_0 + mde
   round((((qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_1 * (1 - p_1) + p_0 *
       (1 - p_0))) / (p_1 - (p_0 + gamma)))^2)

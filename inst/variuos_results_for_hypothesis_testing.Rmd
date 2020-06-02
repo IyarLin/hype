@@ -73,7 +73,7 @@ $$\frac{\hat{p}_1-\hat{p}_0}{SD(\hat{p}_1-\hat{p}_0)} \underset{n \rightarrow\in
 This means that $\frac{C}{SD(\hat{p}_1-\hat{p}_0)}$ should equal the $\alpha$ quantile of the standard normal distribution (in the case of $\alpha = 0.05$ we have $\Phi^{-1}(0.95) = 1.65$):
 
 $$\frac{C}{SD(\hat{p}_1-\hat{p}_0)} = \Phi^{-1}(1 - \alpha) \Rightarrow C = \Phi^{-1}(1 - \alpha) \cdot SD(\hat{p}_1-\hat{p}_0)$$
-We note that 
+We use the unpooled variance estimator:
 
 $$SD(\hat{p}_1-\hat{p}_0) = \sqrt{p_1(1-p_1)/n_1 + p_0(1-p_0)/n_0}$$
 and **finally**
@@ -154,7 +154,7 @@ $$1 - \beta  = 1 - \Phi\left(\frac{C - (p_1 - p_0)}{SD(\hat{p_1} - \hat{p_0})}\r
 And finally the test power is:
 
 $$\boxed{1- \beta = 1 - \Phi\left(\frac{\Phi^{-1}(1 - \alpha) \cdot \sqrt{p_1(1-p_1)/n_1 + p_0(1-p_0)/n_0} - (p_1 - p_0)}{\sqrt{p_1(1-p_1)/n_1 + p_0(1-p_0)/n_0}}\right)}$$
-We note that in the above equation all hats were removed, as the power calculation takes place at the design phase of an experiment before any samples are available. We can usually have a good "guess" regarding $p_0$ based on past data. $p_1$ is usually considered as the Minimum Detectable Effect (MDE) and is chosen by the experiment designers.
+We can usually have a good "guess" regarding $p_0$ based on past data. $p_1$ is usually derived from the required minimum detectable effect such that $p_1 = p_0 + MDE$ and this is how it's implemented as a function.
 
 # MDE (minimum detectable effect)
 
@@ -193,6 +193,7 @@ $$\sqrt{n} = \frac{\left(\Phi^{-1}(1 - \alpha) - \Phi^{-1}(\beta)\right)\sqrt{p_
 And **finally**:
 
 $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \alpha) - \Phi^{-1}(\beta)\right)\sqrt{p_1(1-p_1) + p_0(1-p_0)}}{(p_1 - p_0)}\right)^2}$$
+We can usually have a good "guess" regarding $p_0$ based on past data. $p_1$ is usually derived from the required minimum detectable effect such that $p_1 = p_0 + MDE$ and this is how it's implemented as a function.
 
 # Formulas for combining min required lift, number of sides and number of hypothesis tests {#formulas}
 
@@ -277,12 +278,15 @@ for (i in 1:dim(rejected_null)[1]) {
 Below we can see the results:
 
 ```{r, results = "asis", echo = F}
-rejected_null[,,1] %>% as.data.frame() %>% pandoc.table(split.tables = Inf, caption = "sides = 1")
+rejected_null[, , 1] %>%
+  as.data.frame() %>%
+  pandoc.table(split.tables = Inf, caption = "sides = 1")
 ```
 
 ```{r, results = "asis", echo = F}
-rejected_null[,4,2] %>% as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>% 
+rejected_null[, 4, 2] %>%
+  as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -293,11 +297,14 @@ $$\boxed{1- \beta = 1 - \Phi\left(\frac{\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) \
 ### Simulation validation
 
 ```{r}
-power <- function(p_1, n_1, p_0, n_0, alpha, s, h, gamma) {
-  if(s == 2 & gamma < 0) {
-    p_0_aside <- p_0
-    p_0 <- p_1
-    p_1 <- p_0_aside
+power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
+  if (s == 2 & gamma < 0) {
+    p_1 <- p_0
+    p_0 <- p_1 + mde
+  } else {
+    p_1 <- p_0 + mde
   }
   1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
     (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
@@ -321,11 +328,14 @@ rejected_null_calc_power <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
-      if(gamma[j] == 0){
-        p_1 <- p_0 + 0.01 * coef # alternative is true
+      if (gamma[j] == 0) {
+        mde <- 0.01 * coef # alternative is true
+      } else if (gamma[j] < 0 & s[k] == 1) {
+        next
       } else {
-        p_1 <- p_0 + gamma[j] * coef # alternative is true
+        mde <- gamma[j] * coef # alternative is true
       }
+      p_1 <- p_0 + mde
       p_1_hat <- as.matrix(replicate(
         n = h[i],
         rbinom(M, size = n_1, prob = p_1) / n_1
@@ -362,7 +372,7 @@ for (i in 1:dim(rejected_null)[1]) {
         "calc = ",
         round(power(
           p_0 = p_0,
-          p_1 = p_1,
+          mde = mde,
           n_1 = n_1,
           n_0 = n_0,
           alpha = alpha,
@@ -386,14 +396,16 @@ for (i in 1:dim(rejected_null)[1]) {
 Below we can see the results:
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_power[,,1] %>% as.data.frame() %>% 
+rejected_null_calc_power[, , 1] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = "sides = 1")
 ```
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_power[,4,2] %>% as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>% 
+rejected_null_calc_power[, 4, 2] %>%
+  as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -405,7 +417,7 @@ $$\boxed{MDE = p_1-p_0 = \\ \left(\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) - \Phi^
 
 ```{r}
 MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
-  if(s == 2) gamma <- abs(gamma)
+  if (s == 2) gamma <- abs(gamma)
   (qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
 }
@@ -484,14 +496,16 @@ for (i in 1:dim(rejected_null)[1]) {
 Below we can see the results:
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_MDE[,,1] %>% as.data.frame() %>% 
+rejected_null_calc_MDE[, , 1] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = "sides = 1")
 ```
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_MDE[,4,2] %>% as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>% 
+rejected_null_calc_MDE[, 4, 2] %>%
+  as.data.frame() %>%
+  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -502,7 +516,9 @@ $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \frac{\alpha}{s \cdot h}) - \Phi^{-
 ### Simulation validation
 
 ```{r}
-min_sample_size <- function(p_1, p_0, alpha, s, h, gamma, power) {
+min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
+  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
+  p_1 <- p_0 + mde
   round((((qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_1 * (1 - p_1) + p_0 *
       (1 - p_0))) / (p_1 - (p_0 + gamma)))^2)
@@ -525,14 +541,17 @@ rejected_null_calc_min_n <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
-      if(gamma[j] == 0){
-        p_1 <- p_0 + 0.01 * coef # alternative is true
+      if (gamma[j] == 0) {
+        mde <- 0.01 * coef # alternative is true
+      } else if (gamma[j] < 0 & s[k] == 1) {
+        next
       } else {
-        p_1 <- p_0 + gamma[j] * coef # alternative is true
+        mde <- gamma[j] * coef # alternative is true
       }
-      
+      p_1 <- p_0 + mde
+
       n_0 <- n_1 <- min_sample_size(
-        p_1 = p_1, p_0 = p_0, alpha = alpha,
+        mde = mde, p_0 = p_0, alpha = alpha,
         s = s[k], h = h[i], gamma = gamma[j], power = pow
       )
       p_1_hat <- as.matrix(replicate(
@@ -586,12 +605,14 @@ for (i in 1:dim(rejected_null)[1]) {
 Below we can see the results:
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_min_n[,,1] %>% as.data.frame() %>% 
+rejected_null_calc_min_n[, , 1] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = "sides = 1")
 ```
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_min_n[,,2] %>% as.data.frame() %>% 
+rejected_null_calc_min_n[, , 2] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -608,10 +629,12 @@ $$\boxed{CI = \hat{p}_1-\hat{p}_0 \pm \Phi^{-1}(1-\frac{\alpha}{2h})\sqrt{\hat{p
 ```{r}
 CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
   point_estimate <- p_1_hat - p_0_hat
-  rhs <- qnorm(1-alpha/(2*h))*sqrt(p_1_hat*(1-p_1_hat)/n_1 + 
-                                     p_0_hat*(1-p_0_hat)/n_0)
-  ans <- list(lower = point_estimate - rhs, 
-              upper = point_estimate + rhs)
+  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 +
+    p_0_hat * (1 - p_0_hat) / n_0)
+  ans <- list(
+    lower = point_estimate - rhs,
+    upper = point_estimate + rhs
+  )
   return(ans)
 }
 
@@ -620,29 +643,31 @@ p_1 <- 0.2 # Null is true
 n_0 <- 16000
 n_1 <- 24000
 alpha <- c(0.01, 0.05, 0.1, 0.25)
-diff <- c(-0.02,0,0.03)
+diff <- c(-0.02, 0, 0.03)
 
 h <- 1:5
 M <- 10000
 CI_coverage <- array(
   dim = c(length(h), length(alpha), length(diff)),
-  dimnames = list(paste0("#tests = ", h), paste0("alpha = ", alpha), 
-                  paste0("diff = ", diff))
+  dimnames = list(
+    paste0("#tests = ", h), paste0("alpha = ", alpha),
+    paste0("diff = ", diff)
+  )
 )
 
 for (i in 1:dim(CI_coverage)[1]) {
   for (j in 1:dim(CI_coverage)[2]) {
-    for(k in 1:dim(CI_coverage)[3]){
+    for (k in 1:dim(CI_coverage)[3]) {
       p_1_hat <- as.matrix(replicate(
         n = h[i],
         rbinom(M, size = n_1, prob = p_0 + diff[k]) / n_1
       ), ncol = h[i])
-      
+
       p_0_hat <- as.matrix(replicate(
         n = h[i],
         rbinom(M, size = n_0, prob = p_0) / n_0
       ), ncol = h[i])
-      
+
       CI_mat <- mapply(
         function(p_1_hat, p_0_hat) {
           ci <- CI(
@@ -650,17 +675,17 @@ for (i in 1:dim(CI_coverage)[1]) {
             p_0_hat = p_0_hat, n_0 = rep(n_0, M),
             alpha = alpha[j], h = h[i]
           )
-          in_ci <- ci$lower < diff[k] & diff[k] < ci$upper 
+          in_ci <- ci$lower < diff[k] & diff[k] < ci$upper
           return(in_ci)
         },
         split(p_1_hat, rep(1:ncol(p_1_hat),
-                           each = nrow(p_1_hat)
+          each = nrow(p_1_hat)
         )),
         split(p_0_hat, rep(1:ncol(p_0_hat),
-                           each = nrow(p_0_hat)
+          each = nrow(p_0_hat)
         ))
       )
-      
+
       CI_coverage[i, j, k] <- mean(apply(CI_mat, 1, function(row) any(row == 0)))
     }
   }
@@ -670,17 +695,20 @@ for (i in 1:dim(CI_coverage)[1]) {
 Below we can see the results:
 
 ```{r, results = "asis", echo = F}
-CI_coverage[,,1] %>% as.data.frame() %>% 
+CI_coverage[, , 1] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[1]))
 ```
 
 ```{r, results = "asis", echo = F}
-CI_coverage[,,2] %>% as.data.frame() %>% 
+CI_coverage[, , 2] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[2]))
 ```
 
 ```{r, results = "asis", echo = F}
-CI_coverage[,,3] %>% as.data.frame() %>% 
+CI_coverage[, , 3] %>%
+  as.data.frame() %>%
   pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[3]))
 ```
 
