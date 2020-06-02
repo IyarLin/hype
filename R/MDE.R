@@ -19,14 +19,23 @@
 #' @return test MDE
 #' @example inst/mde_example.R
 #'
-#' @details when doing one-sided tests it's usually the case
-#' that population 1 is considered the treatment and
-#' population 0 serves as the control. In 2 sided tests each
+#' @details In 2 sided tests each
 #' usually represents a different treatment.
+#' When doing one-sided tests it's usually the case
+#' that population 1 is considered the treatment and
+#' population 0 serves as the control. At any rate,
+#' one sided tests are always of the form p_1 - p_0 > C.
+#' For that reason for 1 sided tests one must set: gamma >= 0
 
 MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
+  # validate inputs
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (s == 2) gamma <- abs(gamma)
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & gamma > 0) s <- 1
+
   (qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
-    sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
+      sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
 }

@@ -12,9 +12,9 @@
 #' @importFrom stats qnorm
 #' @export
 #'
-#' @return a list with 2 elements:
-#'   \item{lower}{confidence interval lower bound}
-#'   \item{upper}{confidence interval upper bound}
+#' @return a data.frame with 2 columns:
+#'   \item{lower_bound}{confidence interval lower bound}
+#'   \item{upper_bound}{confidence interval upper bound}
 #' @example inst/CI_example.R
 #'
 #' @details when doing one-sided tests it's usually the case
@@ -22,13 +22,16 @@
 #' population 0 serves as the control. In 2 sided tests each
 #' usually represents a different treatment.
 
-CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha = 0.05, h) {
+CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
+  # validate inputs
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+
   point_estimate <- p_1_hat - p_0_hat
-  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 +
-    p_0_hat * (1 - p_0_hat) / n_0)
-  ans <- list(
-    lower = point_estimate - rhs,
-    upper = point_estimate + rhs
+  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 + p_0_hat * (1 - p_0_hat) / n_0)
+
+  ans <- data.frame(
+    lower_bound = point_estimate - rhs,
+    upper_bound = point_estimate + rhs
   )
   return(ans)
 }

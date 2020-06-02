@@ -210,10 +210,16 @@ $$\boxed{C = \Phi^{-1}(1 - \frac{\alpha}{(s\cdot h}) \cdot \sqrt{\hat{p}_1(1-\ha
 ```{r}
 rm(list = ls())
 critical_value <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, s, h, gamma) {
-  if (gamma != 0 & s == 2) {
-    gamma <- abs(gamma)
+  # validate inputs
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & gamma > 0) {
     s <- 1
   }
+
   qnorm(1 - alpha / (s * h)) *
     sqrt(p_1_hat * (1 - p_1_hat) / n_1 +
       p_0_hat * (1 - p_0_hat) / n_0) + gamma
@@ -237,6 +243,7 @@ rejected_null <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
+      if (s[k] == 2 & gamma[j] < 0) next
       p_1_hat <- as.matrix(replicate(
         n = h[i],
         rbinom(M, size = n_1, prob = p_1 + gamma[j]) / n_1
@@ -284,9 +291,8 @@ rejected_null[, , 1] %>%
 ```
 
 ```{r, results = "asis", echo = F}
-rejected_null[, 4, 2] %>%
+rejected_null[, , 2] %>%
   as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -298,14 +304,15 @@ $$\boxed{1- \beta = 1 - \Phi\left(\frac{\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) \
 
 ```{r}
 power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
+  # validate inputs
   if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
-  if (s == 2 & gamma < 0) {
-    p_1 <- p_0
-    p_0 <- p_1 + mde
-  } else {
-    p_1 <- p_0 + mde
-  }
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+  if (mde <= gamma) stop("mde always has to be greater than gamma")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
+
   1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
     (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
 }
@@ -314,7 +321,7 @@ p_0 <- 0.2
 n_0 <- 8000
 n_1 <- 12000
 alpha <- 0.05
-coef <- 1.05
+coef <- 1.45
 s <- 1:2
 h <- 1:5
 gamma <- seq(-0.03, 0.02, 0.01)
@@ -328,12 +335,14 @@ rejected_null_calc_power <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
-      if (gamma[j] == 0) {
-        mde <- 0.01 * coef # alternative is true
-      } else if (gamma[j] < 0 & s[k] == 1) {
+      if (s[k] == 2 & gamma[j] < 0) {
         next
+      } else if (s[k] == 1 & gamma[j] < 0) {
+        mde <- gamma[j] - (coef - 1) * gamma[j]
+      } else if (gamma[j] == 0) {
+        mde <- 0.01 * coef
       } else {
-        mde <- gamma[j] * coef # alternative is true
+        mde <- gamma[j] * coef
       }
       p_1 <- p_0 + mde
       p_1_hat <- as.matrix(replicate(
@@ -403,9 +412,8 @@ rejected_null_calc_power[, , 1] %>%
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_power[, 4, 2] %>%
+rejected_null_calc_power[, , 2] %>%
   as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -417,7 +425,14 @@ $$\boxed{MDE = p_1-p_0 = \\ \left(\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) - \Phi^
 
 ```{r}
 MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
-  if (s == 2) gamma <- abs(gamma)
+  # validate inputs
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & gamma > 0) s <- 1
+
   (qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
 }
@@ -439,6 +454,7 @@ rejected_null_calc_MDE <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
+      if (s[k] == 2 & gamma[j] < 0) next
       mde <- MDE(
         power = pow, n_1 = n_1, n_0 = n_0, p_0 = p_0, alpha = alpha,
         s = s[k], h = h[i], gamma = gamma[j]
@@ -503,9 +519,8 @@ rejected_null_calc_MDE[, , 1] %>%
 
 
 ```{r, results = "asis", echo = F}
-rejected_null_calc_MDE[, 4, 2] %>%
+rejected_null_calc_MDE[, , 2] %>%
   as.data.frame() %>%
-  rename(`gamma = 0` = ".") %>%
   pandoc.table(split.tables = Inf, caption = "sides = 2")
 ```
 
@@ -517,7 +532,15 @@ $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \frac{\alpha}{s \cdot h}) - \Phi^{-
 
 ```{r}
 min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
-  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
+  # validate inputs
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+  if (mde <= gamma) stop("mde always has to be greater than gamma")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
+
   p_1 <- p_0 + mde
   round((((qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
     sqrt(p_1 * (1 - p_1) + p_0 *
@@ -541,12 +564,14 @@ rejected_null_calc_min_n <- array(
 for (i in 1:dim(rejected_null)[1]) {
   for (j in 1:dim(rejected_null)[2]) {
     for (k in 1:dim(rejected_null)[3]) {
-      if (gamma[j] == 0) {
-        mde <- 0.01 * coef # alternative is true
-      } else if (gamma[j] < 0 & s[k] == 1) {
+      if (s[k] == 2 & gamma[j] < 0) {
         next
+      } else if (s[k] == 1 & gamma[j] < 0) {
+        mde <- gamma[j] - (coef - 1) * gamma[j]
+      } else if (gamma[j] == 0) {
+        mde <- 0.01 * coef
       } else {
-        mde <- gamma[j] * coef # alternative is true
+        mde <- gamma[j] * coef
       }
       p_1 <- p_0 + mde
 
@@ -628,18 +653,20 @@ $$\boxed{CI = \hat{p}_1-\hat{p}_0 \pm \Phi^{-1}(1-\frac{\alpha}{2h})\sqrt{\hat{p
 
 ```{r}
 CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
+  # validate inputs
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+
   point_estimate <- p_1_hat - p_0_hat
-  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 +
-    p_0_hat * (1 - p_0_hat) / n_0)
-  ans <- list(
-    lower = point_estimate - rhs,
-    upper = point_estimate + rhs
+  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 + p_0_hat * (1 - p_0_hat) / n_0)
+
+  ans <- data.frame(
+    lower_bound = point_estimate - rhs,
+    upper_bound = point_estimate + rhs
   )
   return(ans)
 }
 
 p_0 <- 0.2
-p_1 <- 0.2 # Null is true
 n_0 <- 16000
 n_1 <- 24000
 alpha <- c(0.01, 0.05, 0.1, 0.25)
@@ -675,7 +702,7 @@ for (i in 1:dim(CI_coverage)[1]) {
             p_0_hat = p_0_hat, n_0 = rep(n_0, M),
             alpha = alpha[j], h = h[i]
           )
-          in_ci <- ci$lower < diff[k] & diff[k] < ci$upper
+          in_ci <- ci$lower_bound < diff[k] & diff[k] < ci$upper_bound
           return(in_ci)
         },
         split(p_1_hat, rep(1:ncol(p_1_hat),
@@ -697,19 +724,28 @@ Below we can see the results:
 ```{r, results = "asis", echo = F}
 CI_coverage[, , 1] %>%
   as.data.frame() %>%
-  pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[1]))
+  pandoc.table(
+    split.tables = Inf,
+    caption = paste0("diff = ", diff[1])
+  )
 ```
 
 ```{r, results = "asis", echo = F}
 CI_coverage[, , 2] %>%
   as.data.frame() %>%
-  pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[2]))
+  pandoc.table(
+    split.tables = Inf,
+    caption = paste0("diff = ", diff[2])
+  )
 ```
 
 ```{r, results = "asis", echo = F}
 CI_coverage[, , 3] %>%
   as.data.frame() %>%
-  pandoc.table(split.tables = Inf, caption = paste0("diff = ", diff[3]))
+  pandoc.table(
+    split.tables = Inf,
+    caption = paste0("diff = ", diff[3])
+  )
 ```
 
 # Testing with several samples 

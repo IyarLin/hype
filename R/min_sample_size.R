@@ -18,15 +18,27 @@
 #' @return minimum requires sample size per treatment group
 #' @example inst/min_sample_size_example.R
 #'
-#' @details when doing one-sided tests it's usually the case
-#' that population 1 is considered the treatment and
-#' population 0 serves as the control. In 2 sided tests each
+#' @details In 2 sided tests each
 #' usually represents a different treatment.
+#' When doing one-sided tests it's usually the case
+#' that population 1 is considered the treatment and
+#' population 0 serves as the control. At any rate,
+#' one sided tests are always of the form p_1 - p_0 > C.
+#' For that reason for 1 sided tests one must set: mde > gamma >= 0
+
 
 min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
-  if (gamma < 0 & s == 1) stop("1 sided test (s=1) with negative minimum required lift (gamma < 0) doesn't makes sense")
+  # validate inputs
+  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
+  if (h != round(h) | h < 1) stop("h must be a positive integer")
+  if (mde <= gamma) stop("mde always has to be greater than gamma")
+
+  # validate test logic
+  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
+  if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
+
   p_1 <- p_0 + mde
   round((((qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
-    sqrt(p_1 * (1 - p_1) + p_0 *
-      (1 - p_0))) / (p_1 - (p_0 + gamma)))^2)
+            sqrt(p_1 * (1 - p_1) + p_0 *
+                   (1 - p_0))) / (p_1 - (p_0 + gamma)))^2)
 }
