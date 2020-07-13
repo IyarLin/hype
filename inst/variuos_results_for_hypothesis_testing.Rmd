@@ -199,6 +199,93 @@ We can usually have a good "guess" regarding $p_0$ based on past data. $p_1$ is 
 
 Below we can see the formulas presented above combining min required lift $\gamma$, number of sides $s \in \{1,2\}$ and number of hypothesis tests $h \in \mathbb{N}$ (Using Bonferroni correction for multiple hypothesis testing).
 
+## P-value
+
+### Simulation validation
+
+```{r}
+rm(list = ls())
+source("../R/p_value.R")
+
+p_0 <- 0.2
+p_1 <- 0.2 # Null is true
+n_0 <- 15000
+n_1 <- 8000
+
+p_0_hat <- 0.19
+p_1_hat <- 0.2
+
+s <- 1:2
+h <- 1:5
+gamma <- seq(-0.03, 0.02, 0.01)
+M <- 10000
+rejected_null <- array(
+  dim = c(length(h), length(gamma), length(s)),
+  dimnames = list(paste0("#tests = ", h), paste0("gamma = ", gamma), paste0("sides = ", s))
+)
+
+for (i in 1:dim(rejected_null)[1]) {
+  for (j in 1:dim(rejected_null)[2]) {
+    for (k in 1:dim(rejected_null)[3]) {
+      if (s[k] == 2 & gamma[j] < 0) next
+      
+      diff <- p_1_hat + 1.2 * gamma[j] - p_0_hat
+      
+      p_1_hat_0 <- as.matrix(replicate(
+        n = h[i],
+        rbinom(M, size = n_1, prob = p_1 + gamma[j]) / n_1
+      ), ncol = h[i])
+
+      p_0_hat_0 <- as.matrix(replicate(
+        n = h[i],
+        rbinom(M, size = n_0, prob = p_0) / n_0
+      ), ncol = h[i])
+
+      if (s[k] == 2) {
+        diff_0 <- abs(p_1_hat_0 - p_0_hat_0)
+      } else {
+        diff_0 <- p_1_hat_0 - p_0_hat_0
+      }
+
+      rejected_null[i, j, k] <- paste0(
+        "calc = ",
+        round(p_value(
+          p_1_hat = p_1_hat + 1.2 * gamma[j], 
+          n_1 = n_1,
+          p_0_hat = p_0_hat, 
+          n_0 = n_0,
+          s = s[k], h = h[i],
+          gamma = gamma[j]
+        ), 3),
+        ", actual = ",
+        round(mean(apply(
+          diff_0 - diff, 1,
+          function(row) {
+            any(row > 0)
+          }
+        )), 3)
+      )
+    }
+  }
+}
+```
+
+Below we can see the results:
+
+```{r, results = "asis", echo = F}
+rejected_null[, , 1] %>%
+  as.data.frame() %>%
+  pandoc.table(split.tables = Inf, caption = "sides = 1")
+```
+
+```{r, results = "asis", echo = F}
+rejected_null[, , 2] %>%
+  as.data.frame() %>%
+  pandoc.table(split.tables = Inf, caption = "sides = 2")
+```
+
+Looks about right.
+
 ## Critical value
 
 The below is true for all cases **except** $s = 2 \cap \gamma \neq0$.
@@ -209,21 +296,7 @@ $$\boxed{C = \Phi^{-1}(1 - \frac{\alpha}{(s\cdot h}) \cdot \sqrt{\hat{p}_1(1-\ha
 
 ```{r}
 rm(list = ls())
-critical_value <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, s, h, gamma) {
-  # validate inputs
-  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (h != round(h) | h < 1) stop("h must be a positive integer")
-
-  # validate test logic
-  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
-  if (s == 2 & gamma > 0) {
-    s <- 1
-  }
-
-  qnorm(1 - alpha / (s * h)) *
-    sqrt(p_1_hat * (1 - p_1_hat) / n_1 +
-      p_0_hat * (1 - p_0_hat) / n_0) + gamma
-}
+source("../R/critical_value.R")
 
 p_0 <- 0.2
 p_1 <- 0.2 # Null is true
@@ -253,6 +326,7 @@ for (i in 1:dim(rejected_null)[1]) {
         n = h[i],
         rbinom(M, size = n_0, prob = p_0) / n_0
       ), ncol = h[i])
+      
       const <- mapply(
         function(p_1_hat, p_0_hat) {
           critical_value(
@@ -305,21 +379,7 @@ $$\boxed{1- \beta = 1 - \Phi\left(\frac{\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) \
 ```{r}
 rm(list = ls())
 source("../R/critical_value.R")
-power <- function(mde, n_1, p_0, n_0, alpha, s, h, gamma) {
-  # validate inputs
-  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (h != round(h) | h < 1) stop("h must be a positive integer")
-  if (mde <= gamma) stop("mde always has to be greater than gamma")
-
-  # validate test logic
-  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
-  if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
-  
-  p_1 <- p_0 + mde
-
-  1 - pnorm((critical_value(p_1, n_1, p_0, n_0, alpha, s, h, gamma) -
-    (p_1 - p_0)) / sqrt(p_1 * (1 - p_1) / n_1 + p_0 * (1 - p_0) / n_0))
-}
+source("../R/power.R")
 
 p_0 <- 0.2
 n_0 <- 8000
@@ -430,18 +490,7 @@ $$\boxed{MDE = p_1-p_0 = \\ \left(\Phi^{-1}(1 - \frac{\alpha}{s\cdot h}) - \Phi^
 ```{r}
 rm(list = ls())
 source("../R/critical_value.R")
-MDE <- function(power, n_1, p_0, n_0, alpha, s, h, gamma) {
-  # validate inputs
-  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (h != round(h) | h < 1) stop("h must be a positive integer")
-
-  # validate test logic
-  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
-  if (s == 2 & gamma > 0) s <- 1
-
-  (qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
-    sqrt(p_0 * (1 - p_0) / n_1 + p_0 * (1 - p_0) / n_0) + gamma
-}
+source("../R/MDE.R")
 
 p_0 <- 0.2
 n_0 <- 8000
@@ -539,21 +588,7 @@ $$\boxed{n = \left(\frac{\left(\Phi^{-1}(1 - \frac{\alpha}{s \cdot h}) - \Phi^{-
 ```{r}
 rm(list = ls())
 source("../R/critical_value.R")
-min_sample_size <- function(mde, p_0, alpha, s, h, gamma, power) {
-  # validate inputs
-  if (!s %in% c(1, 2)) stop("s has to be either 1 or 2")
-  if (h != round(h) | h < 1) stop("h must be a positive integer")
-  if (mde <= gamma) stop("mde always has to be greater than gamma")
-
-  # validate test logic
-  if (s == 2 & gamma < 0) stop("In 2 sided tests (s=2) gamma must be equal or greater than 0")
-  if (s == 2 & mde <= 0) stop("In 2 sided tests (s=2) mde must be greater than 0")
-
-  p_1 <- p_0 + mde
-  round((((qnorm(1 - alpha / (s * h)) - qnorm(1 - power)) *
-    sqrt(p_1 * (1 - p_1) + p_0 *
-      (1 - p_0))) / (p_1 - (p_0 + gamma)))^2)
-}
+source("../R/min_sample_size.R")
 
 p_0 <- 0.2
 alpha <- 0.05
@@ -661,19 +696,7 @@ $$\boxed{CI = \hat{p}_1-\hat{p}_0 \pm \Phi^{-1}(1-\frac{\alpha}{2h})\sqrt{\hat{p
 
 ```{r}
 rm(list = ls())
-CI <- function(p_1_hat, n_1, p_0_hat, n_0, alpha, h) {
-  # validate inputs
-  if (h != round(h) | h < 1) stop("h must be a positive integer")
-
-  point_estimate <- p_1_hat - p_0_hat
-  rhs <- qnorm(1 - alpha / (2 * h)) * sqrt(p_1_hat * (1 - p_1_hat) / n_1 + p_0_hat * (1 - p_0_hat) / n_0)
-
-  ans <- data.frame(
-    lower_bound = point_estimate - rhs,
-    upper_bound = point_estimate + rhs
-  )
-  return(ans)
-}
+source("../R/CI.R")
 
 p_0 <- 0.2
 n_0 <- 16000
